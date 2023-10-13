@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>MQTT_TEST</title>
+    </head>
+    <body>
+        <input type="text" />
+        <button id="send">发送</button>
+        <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+        <script>
+            const topics = ["test", "message"]
+            let connected = false
+            // Initialize a mqtt variable globally
+            const client = mqtt.connect("ws://127.0.0.1:8083/mqtt", {
+                clean: true, // retain session
+                connectTimeout: 4000, // Timeout period
+                // Authentication information
+                clientId: "emqx_test",
+                username: "",
+                password: "",
+            })
+            client.on("error", (error) => {
+                console.log("Connection failed:", error)
+            })
+            client.on("reconnect", (error) => {
+                console.log("reconnecting:", error)
+            })
+            client.on("connect", () => {
+                connected = true
+                topics.forEach((topic) => {
+                    // Subscribe to the topic: test/# (QoS: 0)
+                    client.subscribe(topic, { qos: 0 }, (error) => {
+                        if (!error) {
+                            console.log("Subscribe to success!" + topic)
+                        } else {
+                            console.log("Subscribe to failure!" + topic)
+                        }
+                    })
+                })
+            })
+            client.on("message", (topic, message) => {
+                console.log("receive message：", topic, message.toString())
+            })
+
+            const sendEl = document.querySelector("#send")
+            const inputEl = document.querySelector("input")
+            sendEl.addEventListener("click", () => {
+                if (!connected) {
+                    alert("未连接")
+                    return
+                }
+                const value = inputEl.value
+                if (!value) {
+                    alert("请输入内容")
+                    return
+                }
+                client.publish("test/topic", value, { qos: 0, retain: false })
+            })
+        </script>
+    </body>
+</html>
